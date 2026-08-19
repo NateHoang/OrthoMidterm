@@ -97,15 +97,88 @@
           font-size: 1.1rem;
         }
       }
+
+      /* ===== Password Gate ===== */
+      #loginWrap {
+        position: fixed;
+        inset: 0;
+        background: rgba(17, 24, 39, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 9999;
+      }
+
+      #loginCard {
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        padding: 20px 18px;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      }
+
+      #loginCard input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 1rem;
+        outline: none;
+        margin-top: 12px;
+        box-sizing: border-box;
+      }
+
+      #loginCard button {
+        width: 100%;
+        margin-top: 12px;
+        padding: 10px 12px;
+        border: 0;
+        border-radius: 8px;
+        background-color: #1d4ed8;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+      }
+
+      #loginCard button:hover {
+        background-color: #1e40af;
+      }
     </style>
   </head>
   <body>
     <h2>Ortho Midterm</h2>
-    <div id="questions"></div>
+
+    <div id="loginWrap">
+      <div id="loginCard">
+        <h3 style="margin-top: 0">Enter password</h3>
+        <input
+          id="passwordInput"
+          type="password"
+          autocomplete="current-password"
+          placeholder="Password"
+        />
+        <button id="loginBtn" type="button">Enter</button>
+        <div
+          id="loginError"
+          role="alert"
+          style="
+            display: none;
+            margin-top: 10px;
+            font-weight: 600;
+            color: #b91c1c;
+          "
+        ></div>
+      </div>
+    </div>
+
+    <div id="questions" style="display: none"></div>
 
     <script>
-      // Render questions into the page as clickable multiple-choice lists.
-      // The existing click handler below relies on: <ul data-correct="N"> where N is 1-4 for A-D.
+      // Questions
       const questions = [
         {
           q: "What is the primary purpose of orthodontic triage in children?",
@@ -1113,27 +1186,77 @@
         });
       }
 
-      renderQuestions();
+      let quizInitialized = false;
+      function initQuiz() {
+        if (quizInitialized) return;
+        quizInitialized = true;
 
-      // Existing click-to-grade logic (relies on ul[data-correct]).
-      document.querySelectorAll("ul[data-correct]").forEach((list) => {
-        const index = parseInt(list.dataset.correct, 10) - 1;
-        const answers = list.querySelectorAll("li");
-        answers.forEach((li, i) => {
-          li.addEventListener("click", () => {
-            answers.forEach((a) => a.classList.remove("correct", "incorrect"));
-            li.classList.add(i === index ? "correct" : "incorrect");
-            let fb = list.querySelector(".feedback");
-            if (!fb) {
-              fb = document.createElement("div");
-              fb.className = "feedback";
-              list.appendChild(fb);
-            }
-            fb.textContent = i === index ? "✅ Correct!" : "❌ Try again.";
-            fb.style.color = i === index ? "green" : "red";
+        renderQuestions();
+
+        // Existing click-to-grade logic (relies on ul[data-correct]).
+        document.querySelectorAll("ul[data-correct]").forEach((list) => {
+          const index = parseInt(list.dataset.correct, 10) - 1;
+          const answers = list.querySelectorAll("li");
+          answers.forEach((li, i) => {
+            li.addEventListener("click", () => {
+              answers.forEach((a) =>
+                a.classList.remove("correct", "incorrect"),
+              );
+              li.classList.add(i === index ? "correct" : "incorrect");
+
+              let fb = list.querySelector(".feedback");
+              if (!fb) {
+                fb = document.createElement("div");
+                fb.className = "feedback";
+                list.appendChild(fb);
+              }
+              fb.textContent = i === index ? "✅ Correct!" : "❌ Try again.";
+              fb.style.color = i === index ? "green" : "red";
+            });
           });
         });
-      });
+      }
+
+      // ===== Password Gate =====
+      const correctPassword = "raymundo";
+      const loginWrap = document.getElementById("loginWrap");
+      const passwordInput = document.getElementById("passwordInput");
+      const loginBtn = document.getElementById("loginBtn");
+      const loginError = document.getElementById("loginError");
+      const questionsEl = document.getElementById("questions");
+
+      function showLoginError(message) {
+        if (!loginError) return;
+        loginError.textContent = message;
+        loginError.style.display = "block";
+      }
+
+      function hideLoginError() {
+        if (!loginError) return;
+        loginError.textContent = "";
+        loginError.style.display = "none";
+      }
+
+      function attemptLogin() {
+        const entered = (passwordInput.value || "").trim();
+        if (entered === correctPassword) {
+          hideLoginError();
+          if (loginWrap) loginWrap.style.display = "none";
+          if (questionsEl) questionsEl.style.display = "block";
+          initQuiz();
+        } else {
+          showLoginError("Incorrect password. Try again.");
+          passwordInput.focus();
+        }
+      }
+
+      if (loginBtn && passwordInput) {
+        loginBtn.addEventListener("click", attemptLogin);
+        passwordInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") attemptLogin();
+        });
+        passwordInput.focus();
+      }
     </script>
   </body>
 </html>
